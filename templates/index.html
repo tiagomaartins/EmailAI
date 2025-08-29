@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Email AI - Classificação Inteligente</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="bg-light">
+
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow-lg border-0 rounded-4">
+                    <div class="card-body p-4">
+                        <h2 class="card-title text-center mb-4 text-primary">IA - Classificação de Emails</h2>
+
+                        <form id="emailForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="arquivo" class="form-label fw-bold">Enviar arquivo (.txt ou .pdf)</label>
+                                <input class="form-control" type="file" id="arquivo" name="arquivo" accept=".txt,.pdf">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="texto_email" class="form-label fw-bold">Ou colar texto do email</label>
+                                <textarea class="form-control" id="texto_email" name="texto_email" rows="6"
+                                    placeholder="Cole aqui o email..."></textarea>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">Processar Email</button>
+                            </div>
+                        </form>
+
+                        <div id="loading" class="text-center mt-3" style="display:none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Processando...</span>
+                            </div>
+                            <p class="mt-2">Processando email...</p>
+                        </div>
+
+                        <div id="resultado" class="mt-4 p-3 border rounded-3 bg-light" style="display:none;">
+                            <h4 class="text-center mb-3">Resultado:</h4>
+                            <p><strong>Categoria:</strong>
+                                <span id="categoria" class="fw-bold"></span>
+                            </p>
+                            <p><strong>Resposta sugerida:</strong>
+                                <span id="resposta"></span>
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const form = document.getElementById("emailForm");
+        const resultadoDiv = document.getElementById("resultado");
+        const loadingDiv = document.getElementById("loading");
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            resultadoDiv.style.opacity = 0;
+            resultadoDiv.classList.remove("fade-in");
+            loadingDiv.style.display = "block";
+
+            const formData = new FormData(form);
+            try {
+                const res = await fetch("/processar", { method: "POST", body: formData });
+                const data = await res.json();
+
+                loadingDiv.style.display = "none";
+                resultadoDiv.style.display = "block";
+
+                const categoriaEl = document.getElementById("categoria");
+                categoriaEl.innerText = data.categoria;
+                categoriaEl.className = "fw-bold";
+
+                if (data.categoria === "Produtivo") categoriaEl.classList.add("text-success");
+                else if (data.categoria === "Improdutivo") categoriaEl.classList.add("text-secondary");
+                else if (data.categoria === "Erro") categoriaEl.classList.add("text-danger");
+
+                document.getElementById("resposta").innerText = data.resposta;
+
+                setTimeout(() => resultadoDiv.classList.add("fade-in"), 50);
+
+            } catch (err) {
+                loadingDiv.style.display = "none";
+                resultadoDiv.style.display = "block";
+                document.getElementById("categoria").innerText = "Erro";
+                document.getElementById("categoria").className = "text-danger fw-bold";
+                document.getElementById("resposta").innerText = "Não foi possível processar o email.";
+                setTimeout(() => resultadoDiv.classList.add("fade-in"), 50);
+                console.error(err);
+            }
+        });
+
+    </script>
+
+</body>
+
+</html>
